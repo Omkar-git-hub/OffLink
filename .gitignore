@@ -1,0 +1,46 @@
+# ================================
+# OffLink - Repository Git Ignore
+# ================================
+
+# IDE / Editor
+.vscode/
+.idea/
+*.iml
+
+# Operating system
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Local environment / secrets
+.env
+.env.*
+!.env.example
+
+# Dart / Flutter temporary files
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+
+# Build output
+build/
+
+# Coverage
+coverage/
+
+# Local test artifacts
+test/coverage/
+
+# Generated temporary files
+*.lock.tmp
