@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' as fbp;
 
 import 'bluetooth_device.dart';
@@ -7,14 +9,26 @@ class FlutterBluePlusService implements BluetoothService {
   final List<BluetoothDevice> _devices = [];
   final Map<String, fbp.BluetoothDevice> _flutterDevices = {};
 
+  final StreamController<List<BluetoothDevice>> _devicesController =
+      StreamController<List<BluetoothDevice>>.broadcast();
+
+  StreamSubscription<List<fbp.ScanResult>>? _scanSubscription;
+
+  @override
+  Stream<List<BluetoothDevice>> get devicesStream =>
+      _devicesController.stream;
+
   @override
   Future<void> startScan() async {
     _devices.clear();
     _flutterDevices.clear();
 
-    await fbp.FlutterBluePlus.startScan();
+    _devicesController.add(List.unmodifiable(_devices));
 
-    fbp.FlutterBluePlus.scanResults.listen((results) {
+    await _scanSubscription?.cancel();
+
+    _scanSubscription =
+        fbp.FlutterBluePlus.scanResults.listen((results) {
       for (final result in results) {
         final device = result.device;
         final id = device.remoteId.str;
@@ -37,13 +51,22 @@ class FlutterBluePlusService implements BluetoothService {
         } else {
           _devices.add(bluetoothDevice);
         }
+
+        _devicesController.add(
+          List.unmodifiable(_devices),
+        );
       }
     });
+
+    await fbp.FlutterBluePlus.startScan();
   }
 
   @override
   Future<void> stopScan() async {
     await fbp.FlutterBluePlus.stopScan();
+
+    await _scanSubscription?.cancel();
+    _scanSubscription = null;
   }
 
   @override
@@ -54,7 +77,9 @@ class FlutterBluePlusService implements BluetoothService {
       throw Exception('Bluetooth device not found');
     }
 
-    await flutterDevice.connect(license: fbp.License.nonprofit);
+    await flutterDevice.connect(
+      license: fbp.License.nonprofit,
+    );
   }
 
   @override
@@ -71,5 +96,10 @@ class FlutterBluePlusService implements BluetoothService {
   @override
   List<BluetoothDevice> getDevices() {
     return List.unmodifiable(_devices);
+  }
+
+  Future<void> dispose() async {
+    await _scanSubscription?.cancel();
+    await _devicesController.close();
   }
 }
